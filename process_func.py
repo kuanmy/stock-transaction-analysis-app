@@ -19,7 +19,18 @@ def filter_data(data: pd.DataFrame, filters: dict) -> pd.DataFrame:
         data = data[condition]
     
     return data
-    
+
+def compute_results(data: pd.DataFrame) -> pd.DataFrame:
+    result = data.groupby([
+            'Code', 'Name Of Client', 'Counter'
+        ]).agg({
+            'Quantity': 'sum',
+            'Net Amount': 'sum',
+        }).assign(
+            Average = lambda d: d['Net Amount'] / d['Quantity']
+        )
+    result.columns = ['Quantity', 'Loss/Profit', 'Average Cost']
+    return result
 
 def prepare_filters_string(filter_from: str, filter_to: str, filter_client_codes: str, filter_counters: str) -> dict:
     if (filter_from and not validate_date(filter_from)) or \
