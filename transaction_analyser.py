@@ -30,21 +30,26 @@ class TransactionAnalyser:
         """ Compute result of analysis based on filtered data.
         Output columns: Code, Name of Client, Counter, Quantity, Loss/Profit, 
             Average Cost
-        Compute sum of quantity (Quantity), sum of net amount (Loss/Profit),
-            and Net Amount / Quantity (Average Cost) grouped by Code, Name
-            of Client and Counter
+        Compute sum of quantity (Quantity), sum of net amount (Loss/Profit) -
+            negate if quantity less than 0, and Net Amount / Quantity (Average Cost) 
+            grouped by Code, Name of Client and Counter
         """
         # Compute results
         result = self.filtered.groupby([
-                'Code', 'Name Of Client', 'Counter'
-            ]).agg({
-                'Quantity': 'sum',
-                'Net Amount': 'sum',
-            }).assign(
-                Average = lambda d: d['Net Amount'] / d['Quantity']
-            )
-        # Rename columns
-        result.columns = ['Quantity', 'Loss/Profit', 'Average Cost']
+            'Code', 'Name Of Client', 'Counter'
+        ]).agg({
+            'Quantity': 'sum',
+            'Net Amount': 'sum',
+        }).rename(columns={'Net Amount': 'Loss/Profit'})
+
+        result['Loss/Profit'] = np.where(
+            result['Quantity'] <= 0,               
+            np.negative(result['Loss/Profit']),
+            result['Loss/Profit']
+        )
+
+        result['Average Cost'] = result['Loss/Profit'] / result['Quantity']
+
         # Format decimal data
         result = result.style.format({
             "Quantity": "{:,.0f}",
